@@ -16,9 +16,6 @@ export default function Home() {
           height="600px"
         />
       </main>
-      <footer className={styles.footer}>
-        <span>Powered by Next.js</span>
-      </footer>
     </div>
   );
 }
