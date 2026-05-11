@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Navbar from "./components/Navbar";
@@ -13,7 +12,7 @@ const geistMono = localFont({
   variable: "--font-geist-mono",
 });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "Google Spreadsheet Embed",
   description: "A web app that embeds a Google Spreadsheet",
 };
