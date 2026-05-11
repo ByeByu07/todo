@@ -1,0 +1,39 @@
+.footer {
+  font-family: var(--font-geist-sans);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 24px;
+  width: 100%;
+  border-top: 1px solid var(--gray-alpha-100, rgba(255, 255, 255, 0.06));
+}
+
+.footer a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--gray-alpha-200, rgba(255, 255, 255, 0.145));
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer a:hover {
+  color: var(--foreground, #ededed);
+}
+
+.icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+@media (max-width: 600px) {
+  .footer {
+    padding: 12px 16px;
+  }
+
+  .footer a {
+    font-size: 13px;
+  }
+}
