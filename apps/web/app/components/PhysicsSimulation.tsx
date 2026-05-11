@@ -17,11 +17,21 @@ const BALL_COLORS = [
 ];
 
 function getRandomColor(): string {
-  return BALL_COLORS[Math.floor(Math.random() * BALL_COLORS.length)] ?? "#FF6B6B";
+  return (
+    BALL_COLORS[Math.floor(Math.random() * BALL_COLORS.length)] ?? "#FF6B6B"
+  );
 }
 
 function getRandomSize(): number {
   return 12 + Math.random() * 16; // 12px to 28px radius
+}
+
+interface TrailPoint {
+  x: number;
+  y: number;
+  color: string;
+  radius: number;
+  alpha: number;
 }
 
 export default function PhysicsSimulation() {
@@ -33,20 +43,27 @@ export default function PhysicsSimulation() {
   const bodiesRef = useRef<Matter.Body[]>([]);
   const spreadsheetBodyRef = useRef<Matter.Body | null>(null);
   const wallsRef = useRef<Matter.Body[]>([]);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const trailsRef = useRef<TrailPoint[]>([]);
 
   const createBall = useCallback((x: number, y: number) => {
     const engine = engineRef.current;
     if (!engine) return;
 
     const radius = getRandomSize();
+    const color = getRandomColor();
     const ball = Matter.Bodies.circle(x, y, radius, {
       restitution: 0.6 + Math.random() * 0.2,
       friction: 0.01,
       frictionAir: 0.01,
       render: {
-        fillStyle: getRandomColor(),
+        fillStyle: color,
       },
     });
+
+    // Attach color to body for trail rendering
+    (ball as unknown as Record<string, unknown>).trailColor = color;
+    (ball as unknown as Record<string, unknown>).trailRadius = radius;
 
     Matter.Composite.add(engine.world, ball);
     bodiesRef.current.push(ball);
@@ -75,19 +92,49 @@ export default function PhysicsSimulation() {
     const centerY = rect.top + rect.height / 2;
 
     if (spreadsheetBodyRef.current) {
-      Matter.Body.setPosition(spreadsheetBodyRef.current, {
-        x: centerX,
-        y: centerY,
-      });
+      const current = spreadsheetBodyRef.current;
+      // If dimensions changed significantly, recreate the body
+      const widthDiff = Math.abs(current.bounds.max.x - current.bounds.min.x - rect.width);
+      const heightDiff = Math.abs(current.bounds.max.y - current.bounds.min.y - rect.height);
+      if (widthDiff > 2 || heightDiff > 2) {
+        Matter.Composite.remove(engine.world, current);
+        const body = Matter.Bodies.rectangle(
+          centerX,
+          centerY,
+          rect.width,
+          rect.height,
+          {
+            isStatic: true,
+            render: {
+              fillStyle: "transparent",
+              strokeStyle: "transparent",
+              lineWidth: 0,
+            },
+          }
+        );
+        spreadsheetBodyRef.current = body;
+        Matter.Composite.add(engine.world, body);
+      } else {
+        Matter.Body.setPosition(current, {
+          x: centerX,
+          y: centerY,
+        });
+      }
     } else {
-      const body = Matter.Bodies.rectangle(centerX, centerY, rect.width, rect.height, {
-        isStatic: true,
-        render: {
-          fillStyle: "transparent",
-          strokeStyle: "transparent",
-          lineWidth: 0,
-        },
-      });
+      const body = Matter.Bodies.rectangle(
+        centerX,
+        centerY,
+        rect.width,
+        rect.height,
+        {
+          isStatic: true,
+          render: {
+            fillStyle: "transparent",
+            strokeStyle: "transparent",
+            lineWidth: 0,
+          },
+        }
+      );
       spreadsheetBodyRef.current = body;
       Matter.Composite.add(engine.world, body);
     }
@@ -106,6 +153,7 @@ export default function PhysicsSimulation() {
     });
     wallsRef.current = [];
 
+    // Left and right walls only — bottom is open so balls can fall off
     const leftWall = Matter.Bodies.rectangle(
       -wallThickness / 2,
       height / 2,
@@ -120,15 +168,8 @@ export default function PhysicsSimulation() {
       height * 2,
       { isStatic: true, render: { visible: false } }
     );
-    const bottomWall = Matter.Bodies.rectangle(
-      width / 2,
-      height + wallThickness / 2 + 200,
-      width * 2,
-      wallThickness,
-      { isStatic: true, render: { visible: false } }
-    );
 
-    wallsRef.current = [leftWall, rightWall, bottomWall];
+    wallsRef.current = [leftWall, rightWall];
     Matter.Composite.add(engine.world, wallsRef.current);
   }, []);
 
@@ -172,7 +213,10 @@ export default function PhysicsSimulation() {
         height,
         wireframes: false,
         background: "transparent",
-        pixelRatio: typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1,
+        pixelRatio:
+          typeof window !== "undefined"
+            ? Math.min(window.devicePixelRatio, 2)
+            : 1,
       },
     });
     renderRef.current = render;
@@ -182,6 +226,44 @@ export default function PhysicsSimulation() {
 
     const runner = Matter.Runner.create();
     runnerRef.current = runner;
+
+    // Trail effect: capture positions and fade them out
+    Matter.Events.on(render, "afterRender", () => {
+      const ctx = render.context;
+      const currentTrails = trailsRef.current;
+
+      // Fade existing trails
+      for (let i = currentTrails.length - 1; i >= 0; i--) {
+        const trail = currentTrails[i];
+        if (!trail) continue;
+        if (trail.alpha <= 0.02) {
+          currentTrails.splice(i, 1);
+          continue;
+        }
+        trail.alpha -= 0.015;
+        ctx.globalAlpha = trail.alpha;
+        ctx.fillStyle = trail.color;
+        ctx.beginPath();
+        ctx.arc(trail.x, trail.y, trail.radius * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Add new trail points for current balls
+      for (const body of bodiesRef.current) {
+        const color = (body as unknown as Record<string, string>).trailColor;
+        const radius = (body as unknown as Record<string, number>).trailRadius;
+        if (color && radius) {
+          currentTrails.push({
+            x: body.position.x,
+            y: body.position.y,
+            color,
+            radius,
+            alpha: 0.25,
+          });
+        }
+      }
+    });
 
     Matter.Render.run(render);
     Matter.Runner.run(runner, engine);
@@ -195,10 +277,15 @@ export default function PhysicsSimulation() {
     // Cleanup offscreen balls periodically
     const cleanupInterval = setInterval(cleanupOffscreenBalls, 2000);
 
-    // Sync spreadsheet body position
-    const syncInterval = setInterval(() => {
-      updateSpreadsheetBody();
-    }, 200);
+    // Sync spreadsheet body position/size using ResizeObserver
+    const iframe = document.querySelector('iframe[title*="Spreadsheet"]');
+    if (iframe) {
+      const ro = new ResizeObserver(() => {
+        updateSpreadsheetBody();
+      });
+      ro.observe(iframe);
+      resizeObserverRef.current = ro;
+    }
 
     const handleResize = () => {
       const newWidth = window.innerWidth;
@@ -213,30 +300,54 @@ export default function PhysicsSimulation() {
       updateSpreadsheetBody();
     };
 
-    const handleClick = (e: MouseEvent) => {
+    const handlePointerDown = (e: PointerEvent) => {
+      // Only spawn if not clicking on interactive elements
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "IFRAME" ||
+        target.tagName === "BUTTON" ||
+        target.tagName === "A" ||
+        target.tagName === "INPUT" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
       createBall(e.clientX, e.clientY);
     };
 
     window.addEventListener("resize", handleResize);
-    window.addEventListener("click", handleClick);
+    window.addEventListener("pointerdown", handlePointerDown);
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      window.removeEventListener("click", handleClick);
+      window.removeEventListener("pointerdown", handlePointerDown);
 
       if (spawnIntervalRef.current) {
         clearInterval(spawnIntervalRef.current);
       }
       clearInterval(cleanupInterval);
-      clearInterval(syncInterval);
 
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
+
+      // Remove all dynamic bodies before clearing engine
+      const allBodies = bodiesRef.current.slice();
+      if (allBodies.length > 0) {
+        Matter.Composite.remove(engine.world, allBodies);
+      }
+      if (spreadsheetBodyRef.current) {
+        Matter.Composite.remove(engine.world, spreadsheetBodyRef.current);
+      }
+      wallsRef.current.forEach((wall) => {
+        Matter.Composite.remove(engine.world, wall);
+      });
+
+      Matter.Events.off(render, "afterRender");
       Matter.Runner.stop(runner);
       Matter.Render.stop(render);
       Matter.Engine.clear(engine);
-
-      if (render.canvas) {
-        render.canvas.remove();
-      }
 
       engineRef.current = null;
       runnerRef.current = null;
@@ -244,6 +355,7 @@ export default function PhysicsSimulation() {
       bodiesRef.current = [];
       wallsRef.current = [];
       spreadsheetBodyRef.current = null;
+      trailsRef.current = [];
     };
   }, [createBall, cleanupOffscreenBalls, updateSpreadsheetBody, updateWalls]);
 
