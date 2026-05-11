@@ -75,7 +75,23 @@ export class DatabaseManager {
     }
 
     const stmt = this.db.prepare(query);
-    return stmt.all(...params) as RunLog[];
+    const rows = stmt.all(...params) as Array<{
+      issue_id: string;
+      identifier: string;
+      status: string;
+      exit_code: number | null;
+      started_at: string;
+      completed_at?: string;
+    }>;
+
+    return rows.map((row) => ({
+      issueId: row.issue_id,
+      identifier: row.identifier,
+      status: row.status,
+      exitCode: row.exit_code,
+      startedAt: row.started_at,
+      completedAt: row.completed_at,
+    }));
   }
 
   getStats(): { total: number; succeeded: number; failed: number } {
