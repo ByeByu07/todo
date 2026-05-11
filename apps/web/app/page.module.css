@@ -10,8 +10,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: calc(100svh - 53px);
-  padding: 80px;
+  min-height: calc(100svh - var(--navbar-height) - 53px);
+  padding: calc(var(--navbar-height) + 16px) 80px 80px;
   gap: 64px;
   font-synthesis: none;
 }
@@ -55,9 +55,8 @@
 
 @media (max-width: 600px) {
   .page {
-    padding: 32px;
-    padding-bottom: 80px;
-    min-height: calc(100svh - 45px);
+    padding: calc(var(--navbar-height-mobile) + 16px) 32px 80px;
+    min-height: calc(100svh - var(--navbar-height-mobile) - 45px);
   }
 
   .main {
