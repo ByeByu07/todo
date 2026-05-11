@@ -25,6 +25,7 @@ export interface IssueMeta {
   retryCount: number;
   lastRetryAt?: string;
   isRetryPending: boolean;
+  hasStarted: boolean;
   commentHistory: Comment[];
 }
 
@@ -89,6 +90,7 @@ export class OrchestratorState {
       retryCount: meta.retryCount ?? existing?.retryCount ?? 0,
       lastRetryAt: meta.lastRetryAt ?? existing?.lastRetryAt,
       isRetryPending: meta.isRetryPending ?? existing?.isRetryPending ?? false,
+      hasStarted: meta.hasStarted ?? existing?.hasStarted ?? false,
       prNumber: meta.prNumber ?? existing?.prNumber,
       prUrl: meta.prUrl ?? existing?.prUrl,
       commentHistory: meta.commentHistory ?? existing?.commentHistory ?? [],

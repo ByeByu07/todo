@@ -97,9 +97,10 @@ export class GitHubClient {
 
   postComment(number: number, body: string): boolean {
     try {
+      // Pass body via stdin to preserve newlines and avoid shell escaping issues
       execSync(
-        `gh issue comment ${number} --repo ${this.repo} --body "${this.escapeBody(body)}"`,
-        { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }
+        `gh issue comment ${number} --repo ${this.repo}`,
+        { input: body, encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }
       );
       return true;
     } catch (error) {
@@ -125,9 +126,10 @@ export class GitHubClient {
 
   updatePR(number: number, body: string): boolean {
     try {
+      // Pass body via stdin to preserve newlines
       execSync(
-        `gh pr edit ${number} --repo ${this.repo} --body "${this.escapeBody(body)}"`,
-        { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }
+        `gh pr edit ${number} --repo ${this.repo}`,
+        { input: body, encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }
       );
       return true;
     } catch (error) {
@@ -170,8 +172,4 @@ export class GitHubClient {
     };
   }
 
-  private escapeBody(body: string): string {
-    // Escape double quotes for shell
-    return body.replace(/"/g, '\\"').replace(/\n/g, "\\n");
-  }
 }
