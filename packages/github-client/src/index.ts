@@ -1,4 +1,7 @@
 import { execSync } from "child_process";
+import { writeFileSync, unlinkSync } from "fs";
+import { join } from "path";
+import { tmpdir } from "os";
 
 export interface Issue {
   id: string;
@@ -96,16 +99,19 @@ export class GitHubClient {
   }
 
   postComment(number: number, body: string): boolean {
+    const tmpFile = join(tmpdir(), `symphony-comment-${number}-${Date.now()}.txt`);
     try {
-      // Pass body via stdin to preserve newlines and avoid shell escaping issues
+      writeFileSync(tmpFile, body, "utf-8");
       execSync(
-        `gh issue comment ${number} --repo ${this.repo}`,
-        { input: body, encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }
+        `gh issue comment ${number} --repo ${this.repo} --body-file "${tmpFile}"`,
+        { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }
       );
       return true;
     } catch (error) {
       console.error(`[github-client] Failed to post comment on issue #${number}:`, error);
       return false;
+    } finally {
+      try { unlinkSync(tmpFile); } catch {}
     }
   }
 
@@ -125,16 +131,19 @@ export class GitHubClient {
   }
 
   updatePR(number: number, body: string): boolean {
+    const tmpFile = join(tmpdir(), `symphony-pr-${number}-${Date.now()}.txt`);
     try {
-      // Pass body via stdin to preserve newlines
+      writeFileSync(tmpFile, body, "utf-8");
       execSync(
-        `gh pr edit ${number} --repo ${this.repo}`,
-        { input: body, encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }
+        `gh pr edit ${number} --repo ${this.repo} --body-file "${tmpFile}"`,
+        { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }
       );
       return true;
     } catch (error) {
       console.error(`[github-client] Failed to update PR #${number}:`, error);
       return false;
+    } finally {
+      try { unlinkSync(tmpFile); } catch {}
     }
   }
 
