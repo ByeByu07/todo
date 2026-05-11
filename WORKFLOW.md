@@ -39,6 +39,9 @@ agent:
   max_concurrent_agents: 3
   max_turns: 10
   max_retry_backoff_ms: 300000
+  comment_on_start: true
+  comment_on_complete: true
+  comment_on_retry: true
 
 codex:
   command: "opencode"
@@ -84,6 +87,8 @@ Continuation context:
    - Ensure PR has label `symphony`
 5. Run validation before finishing: `npm test`, `npm run check-types`, `npm run lint`
 6. If changes affect UI, capture screenshots with Playwright as proof of work.
+7. If review feedback is provided (see "Previous Comments" below), address it in your next iteration.
+8. On retry, update the existing PR branch rather than creating a new one.
 
 ## Available Tools
 

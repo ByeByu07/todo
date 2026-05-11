@@ -61,11 +61,22 @@ export function startServer(state: OrchestratorState, port: number): void {
     <h2>Active Runs</h2>
     ${running.length === 0 ? '<p>No active runs</p>' : `
     <table>
-      <tr><th>Issue ID</th><th>Port</th><th>Session</th><th>Workspace</th></tr>
+      <tr><th>Issue</th><th>PR</th><th>Comments</th><th>Retries</th><th>Port</th><th>Session</th></tr>
       ${running.map(id => {
         const session = state.running[id];
+        const meta = state.issueMeta[id];
         if (!session) return '';
-        return `<tr><td>${id}</td><td>${session.serverPort}</td><td>${session.sessionId.slice(0, 8)}...</td><td>${session.workspacePath}</td></tr>`;
+        const prCell = meta?.prNumber ? `<a href="${meta.prUrl}" target="_blank">#${meta.prNumber}</a>` : '-';
+        const commentsCell = meta ? `${meta.lastCommentCount}` : '0';
+        const retriesCell = meta ? `${meta.retryCount}` : '0';
+        return `<tr>
+          <td>${id}</td>
+          <td>${prCell}</td>
+          <td>${commentsCell}</td>
+          <td>${retriesCell}</td>
+          <td>${session.serverPort}</td>
+          <td>${session.sessionId.slice(0, 8)}...</td>
+        </tr>`;
       }).join('')}
     </table>
     `}
