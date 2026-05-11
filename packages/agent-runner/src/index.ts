@@ -18,7 +18,9 @@ export class AgentRunner {
   }
 
   spawn(prompt: string, workspacePath: string): AgentSession {
-    const args = ["-p", prompt, "-c", workspacePath, "-q"];
+    // OpenCode CLI: opencode run --prompt "<prompt>"
+    // cwd is set via spawn options, no need for -c flag
+    const args = ["run", "--prompt", prompt];
     const parts = this.command.split(" ");
     const cmd = parts[0] || "opencode";
     const cmdArgs = parts.slice(1);

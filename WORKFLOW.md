@@ -41,7 +41,7 @@ agent:
   max_retry_backoff_ms: 300000
 
 codex:
-  command: "opencode -p"
+  command: "opencode"
   turn_timeout_ms: 1800000
   stall_timeout_ms: 600000
 ---

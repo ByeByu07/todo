@@ -35,6 +35,29 @@ gh pr checks <number>
 gh pr comment <number> --body "..."
 ```
 
+### Create label (if it doesn't exist)
+```bash
+gh label create symphony --repo <owner>/<repo> --color "0052CC" --description "Issues for Symphony orchestrator"
+```
+
+### Create issue with label
+```bash
+# Step 1: Ensure label exists first
+gh label create symphony --repo <owner>/<repo> --color "0052CC" --description "Issues for Symphony orchestrator" || true
+
+# Step 2: Create issue with label
+gh issue create --repo <owner>/<repo> --title "feat: ..." --body "..." --label symphony
+```
+
+### Edit issue (add/remove labels)
+```bash
+# Add label
+gh issue edit <number> --repo <owner>/<repo> --add-label symphony
+
+# Remove label
+gh issue edit <number> --repo <owner>/<repo> --remove-label symphony
+```
+
 ### Close issue
 ```bash
 gh issue close <number>
