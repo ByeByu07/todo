@@ -17,5 +17,8 @@
     "@repo/typescript-config": "*",
     "@types/node": "^22.0.0",
     "typescript": "5.9.2"
+  },
+  "dependencies": {
+    "@opencode-ai/sdk": "^1.14.48"
   }
 }

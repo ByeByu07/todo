@@ -102,7 +102,9 @@ export class Orchestrator {
     });
 
     this.agentRunner = new AgentRunner({
-      command: config.codex.command,
+      model: config.codex.model,
+      portRangeStart: 5000,
+      portRangeEnd: 5999,
     });
   }
 
@@ -225,7 +227,7 @@ export class Orchestrator {
       });
 
       // Spawn agent
-      const session = this.agentRunner!.spawn(prompt, workspace.path);
+      const session = await this.agentRunner!.spawn(prompt, workspace.path);
       this.state.addRunning(issue.id, session);
 
       // Stream output

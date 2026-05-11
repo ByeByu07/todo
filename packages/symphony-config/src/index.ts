@@ -32,6 +32,7 @@ export interface WorkflowConfig {
   };
   codex: {
     command: string;
+    model?: string;
     turnTimeoutMs: number;
     stallTimeoutMs: number;
   };
@@ -69,7 +70,7 @@ const DEFAULTS: Partial<WorkflowConfig> = {
     maxRetryBackoffMs: 300000,
   },
   codex: {
-    command: "opencode -p",
+    command: "opencode",
     turnTimeoutMs: 3600000,
     stallTimeoutMs: 300000,
   },
